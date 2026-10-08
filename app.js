@@ -76,7 +76,7 @@ let recognition = null;
 
 function loadMeds() {
   try {
-    const raw = localStorage.getItem("onehold-meds-v2");
+    const raw = localStorage.getItem("onetap-meds-v1");
     if (raw) return JSON.parse(raw);
   } catch {
     /* ignore */
@@ -85,7 +85,7 @@ function loadMeds() {
 }
 
 function saveMeds() {
-  localStorage.setItem("onehold-meds-v2", JSON.stringify(meds));
+  localStorage.setItem("onetap-meds-v1", JSON.stringify(meds));
 }
 
 function announce(text) {
@@ -284,7 +284,7 @@ function applySettings() {
   document.documentElement.classList.toggle("max-contrast", els.optContrast.checked);
   document.documentElement.classList.toggle("reduce-motion", els.optReduced.checked);
   localStorage.setItem(
-    "onehold-settings",
+    "onetap-settings",
     JSON.stringify({
       large: els.optLarge.checked,
       contrast: els.optContrast.checked,
@@ -295,7 +295,7 @@ function applySettings() {
 
 function restoreSettings() {
   try {
-    const s = JSON.parse(localStorage.getItem("onehold-settings") || "{}");
+    const s = JSON.parse(localStorage.getItem("onetap-settings") || "{}");
     els.optLarge.checked = s.large !== false;
     els.optContrast.checked = !!s.contrast;
     els.optReduced.checked = !!s.reduced;

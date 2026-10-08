@@ -1,10 +1,10 @@
-# OneHold
+# One Tap
 
 Accessible medication management for **one-handed and low-dexterity** use.
 
 Hackathon: **Accessibility in Every Step of the Medicine Journey**
 
-Most pill apps assume two hands, tiny taps, and swipes. OneHold uses **one large press**, thumb-zone buttons, voice, keyboard/switch, and a 30-second undo.
+Most pill apps assume two hands, tiny taps, and swipes. One Tap uses **one large tap**, thumb-zone buttons, voice, keyboard/switch, and a 30-second undo.
 
 ## Run locally
 
