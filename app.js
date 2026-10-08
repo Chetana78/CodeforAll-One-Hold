@@ -1,7 +1,6 @@
 const UNDO_MS = 30000;
-
-const LOW_ID = "evening";
 const FIRST_ID = "morning";
+const LOW_ID = "evening";
 
 const defaultMeds = () => [
   {
@@ -73,7 +72,9 @@ let activeId = meds.find((m) => m.status === "due")?.id || meds[0].id;
 let lastAction = null;
 let undoTimer = null;
 let reminderTimers = [];
-const notifiedKeys = new Set(JSON.parse(sessionStorage.getItem("onetap-notified") || "[]"));
+let notifiedKeys = new Set(
+  JSON.parse(sessionStorage.getItem("onetap-notified") || "[]")
+);
 
 function loadMeds() {
   try {
@@ -556,4 +557,3 @@ render();
 updateReminderStatus();
 scheduleReminders();
 setInterval(renderClock, 30000);
-setInterval(scheduleReminders, 60000);

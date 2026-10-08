@@ -9,8 +9,9 @@ Most pill apps assume two hands, tiny taps, and swipes. One Tap uses **one large
 ## Run locally
 
 ```bash
-cd med-onehold
-python3 -m http.server 8788
+cd CodeforAll-One-Hold
+python -m pip install -r requirements.txt
+python main.py
 ```
 
 Open [http://127.0.0.1:8788/](http://127.0.0.1:8788/)
@@ -44,13 +45,14 @@ On a phone, use your laptop’s local IP on the same Wi‑Fi, for example `http:
 | Real pharmacy API | Not in prototype |
 | SMS or locked-phone OS alarms | Not in prototype |
 
-No backend, no login. Data is stored in the browser (`localStorage`).
+No login. Data is stored in the browser (`localStorage`).
 
 ## Files
 
 - `index.html` — app shell
 - `styles.css` — large targets, contrast, thumb zone
 - `app.js` — doses, reminders, missed count, settings
+- `main.py` — local server for the web app
 
 ## Team
 
