@@ -76,6 +76,7 @@ let holdTimer = null;
 let holding = false;
 let listening = false;
 let recognition = null;
+let pythonVoiceAvailable = true;
 
 function loadMeds() {
   try {
@@ -355,11 +356,48 @@ function restoreSettings() {
   }
 }
 
-function startVoice() {
+function handleVoiceCommand(transcript, source) {
+  const said = transcript.toLowerCase();
+  if (said.includes("take") || said.includes("taken") || said.includes("yes")) takeDose(source);
+  else if (said.includes("skip") || said.includes("later")) openOverlay(els.skipSheet);
+  else if (said.includes("refill")) openOverlay(els.refillSheet);
+  else if (said.includes("undo")) undo();
+  else announce(`Heard "${transcript}". Try saying take, skip, or refill.`);
+}
+
+function setVoiceListening(isListening) {
+  listening = isListening;
+  els.voiceBtn.textContent = isListening ? "Listening..." : "Voice";
+}
+
+async function startPythonVoice() {
+  setVoiceListening(true);
+  announce("Listening. Say take, skip, or refill.");
+  try {
+    const response = await fetch("/api/voice-command", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ duration: 5 }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.ok) {
+      announce(data.error || "Python voice did not catch that. You can still hold to take.");
+      return;
+    }
+    handleVoiceCommand(data.transcript, "voice");
+  } catch {
+    pythonVoiceAvailable = false;
+    startBrowserVoice();
+  } finally {
+    if (pythonVoiceAvailable) setVoiceListening(false);
+  }
+}
+
+function startBrowserVoice() {
   const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Speech) {
-    announce("Voice is not available in this browser. Use hold to take, or skip.");
-    speak("Voice is not available. Use hold to take.");
+    announce("Python voice server is not running. Start it with python main.py, then reopen this page.");
+    speak("Voice server is not running. Use hold to take.");
     return;
   }
   if (listening && recognition) {
@@ -370,28 +408,30 @@ function startVoice() {
   recognition.lang = "en-GB";
   recognition.interimResults = false;
   recognition.onstart = () => {
-    listening = true;
-    els.voiceBtn.textContent = "Listening…";
+    setVoiceListening(true);
     announce("Listening. Say take, skip, or refill.");
   };
   recognition.onend = () => {
-    listening = false;
-    els.voiceBtn.textContent = "Voice";
+    setVoiceListening(false);
   };
   recognition.onerror = () => {
-    listening = false;
-    els.voiceBtn.textContent = "Voice";
+    setVoiceListening(false);
     announce("Voice did not catch that. You can still hold to take.");
   };
   recognition.onresult = (event) => {
-    const said = event.results[0][0].transcript.toLowerCase();
-    if (said.includes("take") || said.includes("taken") || said.includes("yes")) takeDose("voice");
-    else if (said.includes("skip") || said.includes("later")) openOverlay(els.skipSheet);
-    else if (said.includes("refill")) openOverlay(els.refillSheet);
-    else if (said.includes("undo")) undo();
-    else announce(`Heard “${said}”. Try saying take, skip, or refill.`);
+    handleVoiceCommand(event.results[0][0].transcript, "voice");
   };
   recognition.start();
+}
+
+function startVoice() {
+  if (listening && recognition) {
+    recognition.stop();
+    return;
+  }
+  if (listening) return;
+  if (pythonVoiceAvailable) startPythonVoice();
+  else startBrowserVoice();
 }
 
 els.skipBtn.addEventListener("click", () => openOverlay(els.skipSheet));

@@ -9,8 +9,9 @@ Most pill apps assume two hands, tiny taps, and swipes. OneHold uses **hold-to-c
 ## Run locally
 
 ```bash
-cd med-onehold
-python3 -m http.server 8788
+cd CodeforAll-One-Hold
+python -m pip install -r requirements.txt
+python main.py
 ```
 
 Open [http://127.0.0.1:8788/](http://127.0.0.1:8788/)
@@ -37,18 +38,20 @@ On a phone, use your laptop’s local IP on the same Wi‑Fi, for example `http:
 | Today list | Working |
 | Simulated refill | Working |
 | Demo reminder overlay | Working |
-| Voice commands | Working in Chromium browsers |
+| Voice commands | Working through `voicerecogfeature.py`; falls back to Chromium browser voice |
 | Access settings | Working |
 | Real pharmacy / NHS API | Not in prototype |
 | Real push notifications | Not in prototype |
 
-No backend, no login. Data is stored in the browser (`localStorage`).
+No login. Data is stored in the browser (`localStorage`).
 
 ## Files
 
 - `index.html` — app + pitch panel
 - `styles.css` — large targets, contrast, thumb zone
 - `app.js` — doses, hold logic, voice, settings
+- `main.py` — static app server + Python voice endpoint
+- `voicerecogfeature.py` — microphone recording + transcription
 
 ## Team
 
