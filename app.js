@@ -1,5 +1,3 @@
-const HOLD_DEFAULT = 1500;
-const HOLD_TREMOR = 2500;
 const UNDO_MS = 30000;
 
 const LOW_ID = "evening";
@@ -41,7 +39,6 @@ const els = {
   nextHeading: document.getElementById("nextHeading"),
   nextMeta: document.getElementById("nextMeta"),
   holdBtn: document.getElementById("holdBtn"),
-  holdFill: document.getElementById("holdFill"),
   holdLabel: document.getElementById("holdLabel"),
   skipBtn: document.getElementById("skipBtn"),
   voiceBtn: document.getElementById("voiceBtn"),
@@ -55,19 +52,16 @@ const els = {
   remindTitle: document.getElementById("remindTitle"),
   remindMeta: document.getElementById("remindMeta"),
   remindHold: document.getElementById("remindHold"),
-  remindFill: document.getElementById("remindFill"),
   remindDismiss: document.getElementById("remindDismiss"),
   refillSheet: document.getElementById("refillSheet"),
   refillCopy: document.getElementById("refillCopy"),
   refillHold: document.getElementById("refillHold"),
-  refillFill: document.getElementById("refillFill"),
   refillCancel: document.getElementById("refillCancel"),
   settings: document.getElementById("settings"),
   settingsBtn: document.getElementById("settingsBtn"),
   settingsClose: document.getElementById("settingsClose"),
   optLarge: document.getElementById("optLarge"),
   optContrast: document.getElementById("optContrast"),
-  optTremor: document.getElementById("optTremor"),
   optReduced: document.getElementById("optReduced"),
   demoReminder: document.getElementById("demoReminder"),
   resetDemo: document.getElementById("resetDemo"),
@@ -77,8 +71,6 @@ let meds = loadMeds();
 let activeId = meds.find((m) => m.status === "due")?.id || meds[0].id;
 let lastAction = null;
 let undoTimer = null;
-let holdTimer = null;
-let holding = false;
 let listening = false;
 let recognition = null;
 
@@ -94,12 +86,6 @@ function loadMeds() {
 
 function saveMeds() {
   localStorage.setItem("onehold-meds-v2", JSON.stringify(meds));
-}
-
-function holdMs() {
-  return document.documentElement.classList.contains("tremor")
-    ? HOLD_TREMOR
-    : HOLD_DEFAULT;
 }
 
 function announce(text) {
@@ -149,7 +135,7 @@ function renderNext() {
   els.nextMeta.textContent = `${med.dose} · ${med.time} · ${med.reason}`;
   const canTake = med.status === "due" || med.status === "upcoming" || med.status === "low";
   els.holdBtn.disabled = !canTake;
-  els.holdLabel.textContent = canTake ? "Hold to take" : med.status === "taken" ? "Already taken" : "Already skipped";
+  els.holdLabel.textContent = canTake ? "Press to take" : med.status === "taken" ? "Already taken" : "Already skipped";
 }
 
 function renderList() {
@@ -276,52 +262,11 @@ function undo() {
   speak("Undone.");
 }
 
-function bindHold(button, fill, onComplete) {
-  const start = (event) => {
+function bindPress(button, onComplete) {
+  button.addEventListener("click", () => {
     if (button.disabled) return;
-    if (event.type === "keydown" && event.repeat) return;
-    if (event.type === "keydown" && event.key !== " " && event.key !== "Enter") return;
-    if (event.type === "keydown") event.preventDefault();
-    if (event.pointerId != null && button.setPointerCapture) {
-      button.setPointerCapture(event.pointerId);
-    }
-    holding = true;
-    fill.style.width = "0%";
-    fill.classList.remove("filling");
-    void fill.offsetWidth;
-    document.documentElement.style.setProperty("--hold", `${holdMs()}ms`);
-    fill.classList.add("filling");
-    fill.style.width = "100%";
-    announce("Keep holding to confirm.");
-    vibrate(15);
-    clearTimeout(holdTimer);
-    holdTimer = setTimeout(() => {
-      if (!holding) return;
-      holding = false;
-      fill.classList.remove("filling");
-      fill.style.width = "0%";
-      onComplete();
-    }, holdMs());
-  };
-
-  const stop = () => {
-    if (!holding) return;
-    holding = false;
-    clearTimeout(holdTimer);
-    fill.classList.remove("filling");
-    fill.style.width = "0%";
-    announce("Cancelled. Hold until the bar fills to confirm.");
-  };
-
-  button.addEventListener("pointerdown", start);
-  button.addEventListener("pointerup", stop);
-  button.addEventListener("pointercancel", stop);
-  button.addEventListener("lostpointercapture", stop);
-  button.addEventListener("keydown", start);
-  button.addEventListener("keyup", (event) => {
-    if (event.key === " " || event.key === "Enter") stop();
+    onComplete();
   });
-  button.addEventListener("blur", stop);
 }
 
 function openOverlay(el) {
@@ -337,14 +282,12 @@ function closeOverlay(el) {
 function applySettings() {
   document.documentElement.classList.toggle("large-targets", els.optLarge.checked);
   document.documentElement.classList.toggle("max-contrast", els.optContrast.checked);
-  document.documentElement.classList.toggle("tremor", els.optTremor.checked);
   document.documentElement.classList.toggle("reduce-motion", els.optReduced.checked);
   localStorage.setItem(
     "onehold-settings",
     JSON.stringify({
       large: els.optLarge.checked,
       contrast: els.optContrast.checked,
-      tremor: els.optTremor.checked,
       reduced: els.optReduced.checked,
     })
   );
@@ -355,7 +298,6 @@ function restoreSettings() {
     const s = JSON.parse(localStorage.getItem("onehold-settings") || "{}");
     els.optLarge.checked = !!s.large;
     els.optContrast.checked = !!s.contrast;
-    els.optTremor.checked = !!s.tremor;
     els.optReduced.checked = !!s.reduced;
     applySettings();
   } catch {
@@ -366,8 +308,8 @@ function restoreSettings() {
 function startVoice() {
   const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Speech) {
-    announce("Voice is not available in this browser. Use hold to take, or skip.");
-    speak("Voice is not available. Use hold to take.");
+    announce("Voice is not available in this browser. Press to take, or skip.");
+    speak("Voice is not available. Press to take.");
     return;
   }
   if (listening && recognition) {
@@ -389,7 +331,7 @@ function startVoice() {
   recognition.onerror = () => {
     listening = false;
     els.voiceBtn.textContent = "Voice";
-    announce("Voice did not catch that. You can still hold to take.");
+    announce("Voice did not catch that. You can still press to take.");
   };
   recognition.onresult = (event) => {
     const said = event.results[0][0].transcript.toLowerCase();
@@ -426,8 +368,8 @@ els.demoReminder.addEventListener("click", () => {
   els.remindTitle.textContent = `Time for ${med.name}`;
   if (els.remindMeta) els.remindMeta.textContent = `${med.dose} · ${med.reason}`;
   openOverlay(els.reminder);
-  announce(`Reminder. Time for ${med.name}. Hold to take.`);
-  speak(`Time for ${med.name}. Hold to take.`);
+  announce(`Reminder. Time for ${med.name}. Press to take.`);
+  speak(`Time for ${med.name}. Press to take.`);
 });
 els.resetDemo.addEventListener("click", () => {
   meds = defaultMeds();
@@ -438,7 +380,7 @@ els.resetDemo.addEventListener("click", () => {
   render();
   announce("Demo reset. Morning tablet is due now.");
 });
-[els.optLarge, els.optContrast, els.optTremor, els.optReduced].forEach((el) => {
+[els.optLarge, els.optContrast, els.optReduced].forEach((el) => {
   el.addEventListener("change", applySettings);
 });
 
@@ -448,9 +390,9 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-bindHold(els.holdBtn, els.holdFill, () => takeDose("hold"));
-bindHold(els.remindHold, els.remindFill, () => takeDose("hold"));
-bindHold(els.refillHold, els.refillFill, requestRefill);
+bindPress(els.holdBtn, () => takeDose("press"));
+bindPress(els.remindHold, () => takeDose("press"));
+bindPress(els.refillHold, requestRefill);
 
 restoreSettings();
 render();

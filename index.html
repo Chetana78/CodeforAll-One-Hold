@@ -27,7 +27,7 @@
           <p class="eyebrow" id="nextStatus">Due now</p>
           <h2 id="nextHeading" class="med-name">Morning tablet</h2>
           <p class="med-meta" id="nextMeta">1 tablet · 08:00 · morning dose</p>
-          <p class="sr-only" id="holdHelp">Press and hold the take button until it completes. Let go early to cancel. Space also holds when the button is focused.</p>
+          <p class="sr-only" id="holdHelp">Press the large take button to log this dose. You can undo for 30 seconds.</p>
         </section>
 
         <div class="thumb-zone">
@@ -38,8 +38,7 @@
             aria-describedby="holdHelp"
             aria-live="off"
           >
-            <span class="hold-fill" id="holdFill" aria-hidden="true"></span>
-            <span class="hold-label" id="holdLabel">Hold to take</span>
+            <span class="hold-label" id="holdLabel">Press to take</span>
           </button>
           <div class="secondary-row">
             <button type="button" class="big-btn" id="skipBtn">Skip</button>
@@ -78,8 +77,7 @@
       <h2 id="remindTitle">Time for Morning tablet</h2>
       <p id="remindMeta">1 tablet · morning dose</p>
       <button type="button" class="hold-btn" id="remindHold">
-        <span class="hold-fill" id="remindFill" aria-hidden="true"></span>
-        <span class="hold-label">Hold to take</span>
+        <span class="hold-label">Press to take</span>
       </button>
       <button type="button" class="big-btn" id="remindDismiss">Not now</button>
     </div>
@@ -90,8 +88,7 @@
       <h2 id="refillTitle">Request refill?</h2>
       <p id="refillCopy">Evening tablet is running low. One control sends a simulated refill request.</p>
       <button type="button" class="hold-btn short" id="refillHold">
-        <span class="hold-fill" id="refillFill" aria-hidden="true"></span>
-        <span class="hold-label">Hold to request refill</span>
+        <span class="hold-label">Press to request refill</span>
       </button>
       <button type="button" class="big-btn" id="refillCancel">Cancel</button>
     </div>
@@ -107,10 +104,6 @@
       <label class="toggle">
         <input type="checkbox" id="optContrast" />
         <span>Maximum contrast</span>
-      </label>
-      <label class="toggle">
-        <input type="checkbox" id="optTremor" />
-        <span>Longer hold (tremor)</span>
       </label>
       <label class="toggle">
         <input type="checkbox" id="optReduced" />

@@ -4,7 +4,7 @@ Accessible medication management for **one-handed and low-dexterity** use.
 
 Hackathon: **Accessibility in Every Step of the Medicine Journey**
 
-Most pill apps assume two hands, tiny taps, and swipes. OneHold uses **hold-to-confirm**, large thumb-zone buttons, voice, keyboard/switch, and a 30-second undo.
+Most pill apps assume two hands, tiny taps, and swipes. OneHold uses **one large press**, thumb-zone buttons, voice, keyboard/switch, and a 30-second undo.
 
 ## Run locally
 
@@ -20,11 +20,11 @@ On a phone, use your laptop’s local IP on the same Wi‑Fi, for example `http:
 ## Demo (90 seconds)
 
 1. **Access settings → Reset demo data**
-2. Hold **Hold to take** until the bar fills (Morning tablet)
+2. Press **Press to take** (Morning tablet)
 3. Show **Undo**
-4. Turn on **Larger targets** and **Longer hold (tremor)**
-5. **Trigger reminder (demo)** → hold to take
-6. Tap **Evening tablet · Low · refill** → hold to request refill
+4. Turn on **Larger targets**
+5. **Trigger reminder (demo)** → press to take
+6. Tap **Evening tablet · Low · refill** → press to request refill
 7. Optional: **Voice** and say “take”, “skip”, “refill”, or “undo” (Chrome + mic)
 
 ## What’s in the prototype
