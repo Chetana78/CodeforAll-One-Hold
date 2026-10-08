@@ -9,8 +9,7 @@
   --warn: #7a3d00;
   --due: #8b1e1e;
   --focus: #005fcc;
-  --hold: 1500ms;
-  --target: 76px;
+  --target: 88px;
   --radius: 20px;
   --font: "Segoe UI", "Avenir Next", "Helvetica Neue", system-ui, sans-serif;
 }
@@ -29,7 +28,7 @@ html.max-contrast {
 }
 
 html.large-targets {
-  --target: 96px;
+  --target: 112px;
 }
 
 *,
@@ -132,8 +131,15 @@ body {
   cursor: pointer;
 }
 
+.press-hint {
+  margin: 10px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
 .icon-btn {
-  min-height: 56px;
+  min-height: var(--target);
   min-width: 56px;
   padding: 8px 12px;
   border-radius: 14px;
@@ -184,19 +190,23 @@ body {
   margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 20px;
 }
 
 .hold-btn {
   position: relative;
   isolation: isolate;
-  min-height: 132px;
+  min-height: 200px;
   width: 100%;
   border: 3px solid var(--ink);
   border-radius: 28px;
   background: var(--take);
   color: var(--take-ink);
   overflow: hidden;
+}
+
+html.large-targets .hold-btn {
+  min-height: 240px;
 }
 
 .hold-btn:disabled {
@@ -206,23 +216,11 @@ body {
 }
 
 .hold-btn.short {
-  min-height: 112px;
-}
-
-.hold-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 0%;
-  background: rgba(255, 255, 255, 0.28);
-  z-index: -1;
-}
-
-html:not(.reduce-motion) .hold-fill.filling {
-  transition: width var(--hold) linear;
+  min-height: 140px;
 }
 
 .hold-label {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
@@ -230,7 +228,7 @@ html:not(.reduce-motion) .hold-fill.filling {
 .secondary-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 16px;
 }
 
 .big-btn {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="large-targets">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -27,7 +27,7 @@
           <p class="eyebrow" id="nextStatus">Due now</p>
           <h2 id="nextHeading" class="med-name">Morning tablet</h2>
           <p class="med-meta" id="nextMeta">1 tablet · 08:00 · morning dose</p>
-          <p class="sr-only" id="holdHelp">Press the large take button to log this dose. You can undo for 30 seconds.</p>
+          <p class="press-hint" id="holdHelp">One large tap. No hold. Misses can be undone.</p>
         </section>
 
         <div class="thumb-zone">
@@ -38,7 +38,7 @@
             aria-describedby="holdHelp"
             aria-live="off"
           >
-            <span class="hold-label" id="holdLabel">Press to take</span>
+            <span class="hold-label" id="holdLabel">Take dose</span>
           </button>
           <div class="secondary-row">
             <button type="button" class="big-btn" id="skipBtn">Skip</button>
@@ -77,7 +77,7 @@
       <h2 id="remindTitle">Time for Morning tablet</h2>
       <p id="remindMeta">1 tablet · morning dose</p>
       <button type="button" class="hold-btn" id="remindHold">
-        <span class="hold-label">Press to take</span>
+        <span class="hold-label">Take dose</span>
       </button>
       <button type="button" class="big-btn" id="remindDismiss">Not now</button>
     </div>
@@ -88,7 +88,7 @@
       <h2 id="refillTitle">Request refill?</h2>
       <p id="refillCopy">Evening tablet is running low. One control sends a simulated refill request.</p>
       <button type="button" class="hold-btn short" id="refillHold">
-        <span class="hold-label">Press to request refill</span>
+        <span class="hold-label">Request refill</span>
       </button>
       <button type="button" class="big-btn" id="refillCancel">Cancel</button>
     </div>
@@ -98,7 +98,7 @@
     <div class="sheet" role="dialog" aria-labelledby="settingsTitle" aria-modal="true">
       <h2 id="settingsTitle">Access settings</h2>
       <label class="toggle">
-        <input type="checkbox" id="optLarge" />
+        <input type="checkbox" id="optLarge" checked />
         <span>Larger targets</span>
       </label>
       <label class="toggle">

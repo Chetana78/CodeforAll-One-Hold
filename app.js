@@ -135,7 +135,7 @@ function renderNext() {
   els.nextMeta.textContent = `${med.dose} · ${med.time} · ${med.reason}`;
   const canTake = med.status === "due" || med.status === "upcoming" || med.status === "low";
   els.holdBtn.disabled = !canTake;
-  els.holdLabel.textContent = canTake ? "Press to take" : med.status === "taken" ? "Already taken" : "Already skipped";
+  els.holdLabel.textContent = canTake ? "Take dose" : med.status === "taken" ? "Already taken" : "Already skipped";
 }
 
 function renderList() {
@@ -296,7 +296,7 @@ function applySettings() {
 function restoreSettings() {
   try {
     const s = JSON.parse(localStorage.getItem("onehold-settings") || "{}");
-    els.optLarge.checked = !!s.large;
+    els.optLarge.checked = s.large !== false;
     els.optContrast.checked = !!s.contrast;
     els.optReduced.checked = !!s.reduced;
     applySettings();
@@ -308,8 +308,8 @@ function restoreSettings() {
 function startVoice() {
   const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Speech) {
-    announce("Voice is not available in this browser. Press to take, or skip.");
-    speak("Voice is not available. Press to take.");
+    announce("Voice is not available in this browser. Use the large take button, or skip.");
+    speak("Voice is not available. Use the take button.");
     return;
   }
   if (listening && recognition) {
@@ -331,7 +331,7 @@ function startVoice() {
   recognition.onerror = () => {
     listening = false;
     els.voiceBtn.textContent = "Voice";
-    announce("Voice did not catch that. You can still press to take.");
+    announce("Voice did not catch that. You can still use the large take button.");
   };
   recognition.onresult = (event) => {
     const said = event.results[0][0].transcript.toLowerCase();
@@ -368,8 +368,8 @@ els.demoReminder.addEventListener("click", () => {
   els.remindTitle.textContent = `Time for ${med.name}`;
   if (els.remindMeta) els.remindMeta.textContent = `${med.dose} · ${med.reason}`;
   openOverlay(els.reminder);
-  announce(`Reminder. Time for ${med.name}. Press to take.`);
-  speak(`Time for ${med.name}. Press to take.`);
+  announce(`Reminder. Time for ${med.name}. Tap take dose.`);
+  speak(`Time for ${med.name}. Tap take dose.`);
 });
 els.resetDemo.addEventListener("click", () => {
   meds = defaultMeds();
