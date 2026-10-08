@@ -1,5 +1,3 @@
-const HOLD_DEFAULT = 1500;
-const HOLD_TREMOR = 2500;
 const UNDO_MS = 30000;
 const VOICE_RECORD_SECONDS = 3;
 const WAKE_RECORD_SECONDS = 3;
@@ -9,29 +7,29 @@ const VOICE_COMMANDS = ["take", "taken", "yes", "skip", "later", "refill", "undo
 
 const defaultMeds = () => [
   {
-    id: "amlodipine",
-    name: "Amlodipine",
-    dose: "5 mg",
+    id: "morning",
+    name: "Morning tablet",
+    dose: "1 tablet",
     time: "08:00",
-    reason: "blood pressure",
+    reason: "morning dose",
     status: "due",
     remaining: 18,
   },
   {
-    id: "metformin",
-    name: "Metformin",
-    dose: "500 mg",
+    id: "afternoon",
+    name: "Afternoon tablet",
+    dose: "1 tablet",
     time: "13:00",
-    reason: "diabetes",
+    reason: "afternoon dose",
     status: "upcoming",
     remaining: 24,
   },
   {
-    id: "atorvastatin",
-    name: "Atorvastatin",
-    dose: "20 mg",
+    id: "evening",
+    name: "Evening tablet",
+    dose: "1 tablet",
     time: "21:00",
-    reason: "cholesterol",
+    reason: "evening dose",
     status: "low",
     remaining: 4,
   },
@@ -43,7 +41,6 @@ const els = {
   nextHeading: document.getElementById("nextHeading"),
   nextMeta: document.getElementById("nextMeta"),
   holdBtn: document.getElementById("holdBtn"),
-  holdFill: document.getElementById("holdFill"),
   holdLabel: document.getElementById("holdLabel"),
   skipBtn: document.getElementById("skipBtn"),
   voiceBtn: document.getElementById("voiceBtn"),
@@ -54,31 +51,31 @@ const els = {
   live: document.getElementById("live"),
   skipSheet: document.getElementById("skipSheet"),
   reminder: document.getElementById("reminder"),
+  remindTitle: document.getElementById("remindTitle"),
+  remindMeta: document.getElementById("remindMeta"),
   remindHold: document.getElementById("remindHold"),
-  remindFill: document.getElementById("remindFill"),
   remindDismiss: document.getElementById("remindDismiss"),
   refillSheet: document.getElementById("refillSheet"),
   refillCopy: document.getElementById("refillCopy"),
   refillHold: document.getElementById("refillHold"),
-  refillFill: document.getElementById("refillFill"),
   refillCancel: document.getElementById("refillCancel"),
   settings: document.getElementById("settings"),
   settingsBtn: document.getElementById("settingsBtn"),
   settingsClose: document.getElementById("settingsClose"),
   optLarge: document.getElementById("optLarge"),
   optContrast: document.getElementById("optContrast"),
-  optTremor: document.getElementById("optTremor"),
   optReduced: document.getElementById("optReduced"),
   demoReminder: document.getElementById("demoReminder"),
+  enableReminders: document.getElementById("enableReminders"),
+  reminderStatus: document.getElementById("reminderStatus"),
   resetDemo: document.getElementById("resetDemo"),
+  missedCount: document.getElementById("missedCount"),
 };
 
 let meds = loadMeds();
 let activeId = meds.find((m) => m.status === "due")?.id || meds[0].id;
 let lastAction = null;
 let undoTimer = null;
-let holdTimer = null;
-let holding = false;
 let listening = false;
 let recognition = null;
 let pythonVoiceAvailable = true;
@@ -87,7 +84,7 @@ let waitingForWakeCommand = false;
 
 function loadMeds() {
   try {
-    const raw = localStorage.getItem("onehold-meds");
+    const raw = localStorage.getItem("onetap-meds-v1");
     if (raw) return JSON.parse(raw);
   } catch {
     /* ignore */
@@ -96,13 +93,85 @@ function loadMeds() {
 }
 
 function saveMeds() {
-  localStorage.setItem("onehold-meds", JSON.stringify(meds));
+  localStorage.setItem("onetap-meds-v1", JSON.stringify(meds));
 }
 
-function holdMs() {
-  return document.documentElement.classList.contains("tremor")
-    ? HOLD_TREMOR
-    : HOLD_DEFAULT;
+function dayKey(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function daysAgo(n) {
+  const date = new Date();
+  date.setDate(date.getDate() - n);
+  return date;
+}
+
+function defaultMissed() {
+  return [
+    {
+      key: `morning-${dayKey(daysAgo(2))}`,
+      id: "morning",
+      name: "Morning tablet",
+      time: "08:00",
+      day: dayKey(daysAgo(2)),
+      reason: "not taken",
+    },
+    {
+      key: `afternoon-${dayKey(daysAgo(1))}`,
+      id: "afternoon",
+      name: "Afternoon tablet",
+      time: "13:00",
+      day: dayKey(daysAgo(1)),
+      reason: "skipped",
+    },
+  ];
+}
+
+function loadMissed() {
+  try {
+    const raw = localStorage.getItem("onetap-missed-v1");
+    if (raw) return JSON.parse(raw);
+  } catch {
+    /* ignore */
+  }
+  return defaultMissed();
+}
+
+function saveMissed() {
+  localStorage.setItem("onetap-missed-v1", JSON.stringify(missed));
+}
+
+let missed = loadMissed();
+
+function addMissed(med, reason, day = dayKey()) {
+  const key = `${med.id}-${day}`;
+  if (missed.some((item) => item.key === key)) return key;
+  missed.unshift({
+    key,
+    id: med.id,
+    name: med.name,
+    time: med.time,
+    day,
+    reason,
+  });
+  saveMissed();
+  return key;
+}
+
+function removeMissedKey(key) {
+  missed = missed.filter((item) => item.key !== key);
+  saveMissed();
+}
+
+function checkOverdueMisses() {
+  const now = Date.now();
+  meds.forEach((med) => {
+    if (med.status === "taken" || med.status === "skipped") return;
+    const dueAt = doseTimeToday(med.time).getTime();
+    if (now > dueAt + 60 * 60 * 1000) {
+      addMissed(med, "not taken");
+    }
+  });
 }
 
 function announce(text) {
@@ -152,7 +221,7 @@ function renderNext() {
   els.nextMeta.textContent = `${med.dose} · ${med.time} · ${med.reason}`;
   const canTake = med.status === "due" || med.status === "upcoming" || med.status === "low";
   els.holdBtn.disabled = !canTake;
-  els.holdLabel.textContent = canTake ? "Hold to take" : med.status === "taken" ? "Already taken" : "Already skipped";
+  els.holdLabel.textContent = canTake ? "Take dose" : med.status === "taken" ? "Already taken" : "Already skipped";
 }
 
 function renderList() {
@@ -179,11 +248,14 @@ function renderList() {
               : "Later";
     btn.append(left, badge);
     btn.addEventListener("click", () => {
-      if (med.status === "low" && med.id === "atorvastatin") {
+      if (med.status === "low" && med.id === LOW_ID) {
         activeId = med.id;
         renderNext();
+        if (els.refillCopy) {
+          els.refillCopy.textContent = `${med.name} is running low. One control sends a simulated refill request.`;
+        }
         openOverlay(els.refillSheet);
-        announce("Refill sheet opened for Atorvastatin.");
+        announce(`Refill sheet opened for ${med.name}.`);
         return;
       }
       activeId = med.id;
@@ -195,10 +267,17 @@ function renderList() {
   });
 }
 
+function renderMissed() {
+  if (!els.missedCount) return;
+  const n = missed.length;
+  els.missedCount.textContent = n === 1 ? "Missed 1 time" : `Missed ${n} times`;
+}
+
 function render() {
   renderClock();
   renderNext();
   renderList();
+  renderMissed();
 }
 
 function showToast(text) {
@@ -216,8 +295,11 @@ function takeDose(source) {
   if (med.status === "taken" || med.status === "skipped") return;
   lastAction = { type: "take", id: med.id, prev: med.status };
   med.status = "taken";
+  markNotified(med);
+  removeMissedKey(`${med.id}-${dayKey()}`);
   saveMeds();
   render();
+  scheduleReminders();
   const msg = `${med.name} marked as taken. Undo available for 30 seconds.`;
   showToast(`${med.name} taken.`);
   announce(msg);
@@ -230,10 +312,13 @@ function takeDose(source) {
 function skipDose(reason) {
   const med = activeMed();
   if (med.status === "taken") return;
-  lastAction = { type: "skip", id: med.id, prev: med.status, reason };
+  const missKey = addMissed(med, reason === "unwell" ? "felt unwell" : "skipped");
+  lastAction = { type: "skip", id: med.id, prev: med.status, reason, missKey };
   med.status = "skipped";
+  markNotified(med);
   saveMeds();
   render();
+  scheduleReminders();
   const label = reason === "unwell" ? "felt unwell" : "not now";
   showToast(`${med.name} skipped.`);
   announce(`${med.name} skipped, ${label}. Undo available.`);
@@ -243,7 +328,7 @@ function skipDose(reason) {
 }
 
 function requestRefill() {
-  const med = meds.find((m) => m.id === "atorvastatin");
+  const med = meds.find((m) => m.id === LOW_ID);
   lastAction = { type: "refill", remaining: med.remaining };
   med.remaining = 30;
   med.status = med.status === "low" ? "upcoming" : med.status;
@@ -262,9 +347,10 @@ function undo() {
     const med = meds.find((m) => m.id === lastAction.id);
     if (med) med.status = lastAction.prev;
     activeId = lastAction.id;
+    if (lastAction.type === "skip" && lastAction.missKey) removeMissedKey(lastAction.missKey);
   }
   if (lastAction.type === "refill") {
-    const med = meds.find((m) => m.id === "atorvastatin");
+    const med = meds.find((m) => m.id === LOW_ID);
     med.remaining = lastAction.remaining;
     med.status = "low";
   }
@@ -276,52 +362,11 @@ function undo() {
   speak("Undone.");
 }
 
-function bindHold(button, fill, onComplete) {
-  const start = (event) => {
+function bindPress(button, onComplete) {
+  button.addEventListener("click", () => {
     if (button.disabled) return;
-    if (event.type === "keydown" && event.repeat) return;
-    if (event.type === "keydown" && event.key !== " " && event.key !== "Enter") return;
-    if (event.type === "keydown") event.preventDefault();
-    if (event.pointerId != null && button.setPointerCapture) {
-      button.setPointerCapture(event.pointerId);
-    }
-    holding = true;
-    fill.style.width = "0%";
-    fill.classList.remove("filling");
-    void fill.offsetWidth;
-    document.documentElement.style.setProperty("--hold", `${holdMs()}ms`);
-    fill.classList.add("filling");
-    fill.style.width = "100%";
-    announce("Keep holding to confirm.");
-    vibrate(15);
-    clearTimeout(holdTimer);
-    holdTimer = setTimeout(() => {
-      if (!holding) return;
-      holding = false;
-      fill.classList.remove("filling");
-      fill.style.width = "0%";
-      onComplete();
-    }, holdMs());
-  };
-
-  const stop = () => {
-    if (!holding) return;
-    holding = false;
-    clearTimeout(holdTimer);
-    fill.classList.remove("filling");
-    fill.style.width = "0%";
-    announce("Cancelled. Hold until the bar fills to confirm.");
-  };
-
-  button.addEventListener("pointerdown", start);
-  button.addEventListener("pointerup", stop);
-  button.addEventListener("pointercancel", stop);
-  button.addEventListener("lostpointercapture", stop);
-  button.addEventListener("keydown", start);
-  button.addEventListener("keyup", (event) => {
-    if (event.key === " " || event.key === "Enter") stop();
+    onComplete();
   });
-  button.addEventListener("blur", stop);
 }
 
 function openOverlay(el) {
@@ -337,14 +382,12 @@ function closeOverlay(el) {
 function applySettings() {
   document.documentElement.classList.toggle("large-targets", els.optLarge.checked);
   document.documentElement.classList.toggle("max-contrast", els.optContrast.checked);
-  document.documentElement.classList.toggle("tremor", els.optTremor.checked);
   document.documentElement.classList.toggle("reduce-motion", els.optReduced.checked);
   localStorage.setItem(
-    "onehold-settings",
+    "onetap-settings",
     JSON.stringify({
       large: els.optLarge.checked,
       contrast: els.optContrast.checked,
-      tremor: els.optTremor.checked,
       reduced: els.optReduced.checked,
     })
   );
@@ -352,10 +395,9 @@ function applySettings() {
 
 function restoreSettings() {
   try {
-    const s = JSON.parse(localStorage.getItem("onehold-settings") || "{}");
-    els.optLarge.checked = !!s.large;
+    const s = JSON.parse(localStorage.getItem("onetap-settings") || "{}");
+    els.optLarge.checked = s.large !== false;
     els.optContrast.checked = !!s.contrast;
-    els.optTremor.checked = !!s.tremor;
     els.optReduced.checked = !!s.reduced;
     applySettings();
   } catch {
@@ -520,27 +562,30 @@ els.settingsClose.addEventListener("click", () => {
   closeOverlay(els.settings);
   els.settingsBtn.focus();
 });
+els.enableReminders.addEventListener("click", () => {
+  enablePhoneReminders();
+});
 els.demoReminder.addEventListener("click", () => {
   closeOverlay(els.settings);
-  activeId = "amlodipine";
-  const med = activeMed();
+  const med = meds.find((item) => item.id === FIRST_ID);
   if (med.status === "taken") med.status = "due";
   saveMeds();
   render();
-  openOverlay(els.reminder);
-  announce("Reminder. Time for Amlodipine. Hold to take.");
-  speak("Time for Amlodipine. Hold to take.");
+  sendPhoneNotification(med);
+  openDoseReminder(med);
 });
 els.resetDemo.addEventListener("click", () => {
   meds = defaultMeds();
-  activeId = "amlodipine";
+  missed = defaultMissed();
+  activeId = FIRST_ID;
   lastAction = null;
   els.toast.hidden = true;
   saveMeds();
+  saveMissed();
   render();
-  announce("Demo reset. Amlodipine is due now.");
+  announce("Demo reset. Morning tablet is due now.");
 });
-[els.optLarge, els.optContrast, els.optTremor, els.optReduced].forEach((el) => {
+[els.optLarge, els.optContrast, els.optReduced].forEach((el) => {
   el.addEventListener("change", applySettings);
 });
 
@@ -550,12 +595,124 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-bindHold(els.holdBtn, els.holdFill, () => takeDose("hold"));
-bindHold(els.remindHold, els.remindFill, () => takeDose("hold"));
-bindHold(els.refillHold, els.refillFill, requestRefill);
+function reminderKey(med) {
+  return `${med.id}-${new Date().toDateString()}-${med.time}`;
+}
+
+function markNotified(med) {
+  notifiedKeys.add(reminderKey(med));
+  sessionStorage.setItem("onetap-notified", JSON.stringify([...notifiedKeys]));
+}
+
+function doseTimeToday(hhmm) {
+  const [hours, minutes] = hhmm.split(":").map(Number);
+  const when = new Date();
+  when.setHours(hours, minutes, 0, 0);
+  return when;
+}
+
+function updateReminderStatus() {
+  if (!els.reminderStatus) return;
+  if (!("Notification" in window)) {
+    els.reminderStatus.textContent = "This browser cannot show phone notifications. Keep the page open for on-screen reminders.";
+    return;
+  }
+  if (Notification.permission === "granted") {
+    els.reminderStatus.textContent = "Phone reminders are on. One Tap will alert at each dose time (08:00, 13:00, 21:00).";
+  } else if (Notification.permission === "denied") {
+    els.reminderStatus.textContent = "Notifications are blocked. Allow them in the browser settings for this site.";
+  } else {
+    els.reminderStatus.textContent = "Tap Turn on phone reminders, then Allow, so a due dose can ping this device.";
+  }
+}
+
+function openDoseReminder(med) {
+  activeId = med.id;
+  if (med.status === "taken" || med.status === "skipped") return;
+  render();
+  els.remindTitle.textContent = `Time for ${med.name}`;
+  if (els.remindMeta) els.remindMeta.textContent = `${med.dose} · ${med.reason}`;
+  openOverlay(els.reminder);
+  announce(`Reminder. Time for ${med.name}. Tap take dose.`);
+  speak(`Time for ${med.name}. Tap take dose.`);
+  vibrate([40, 80, 40]);
+}
+
+function sendPhoneNotification(med) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  try {
+    const note = new Notification(`Time for ${med.name}`, {
+      body: `${med.dose} at ${med.time}. One large tap to take it. No hold.`,
+      tag: reminderKey(med),
+      requireInteraction: true,
+    });
+    note.onclick = () => {
+      window.focus();
+      openDoseReminder(med);
+      note.close();
+    };
+  } catch {
+    /* ignore */
+  }
+}
+
+function fireScheduledReminder(med) {
+  if (med.status === "taken" || med.status === "skipped") return;
+  const key = reminderKey(med);
+  if (notifiedKeys.has(key)) return;
+  markNotified(med);
+  sendPhoneNotification(med);
+  openDoseReminder(med);
+}
+
+function scheduleReminders() {
+  reminderTimers.forEach(clearTimeout);
+  reminderTimers = [];
+  if (!("Notification" in window) || Notification.permission !== "granted") {
+    updateReminderStatus();
+    return;
+  }
+  const now = Date.now();
+  meds.forEach((med) => {
+    if (med.status === "taken" || med.status === "skipped") return;
+    const dueAt = doseTimeToday(med.time).getTime();
+    const delay = dueAt - now;
+    if (delay > 0) {
+      reminderTimers.push(setTimeout(() => fireScheduledReminder(med), delay));
+    }
+  });
+  updateReminderStatus();
+}
+
+async function enablePhoneReminders() {
+  if (!("Notification" in window)) {
+    announce("Phone notifications are not available in this browser.");
+    updateReminderStatus();
+    return;
+  }
+  const permission = await Notification.requestPermission();
+  updateReminderStatus();
+  if (permission === "granted") {
+    scheduleReminders();
+    const dueNow = meds.find((item) => item.status === "due");
+    if (dueNow) fireScheduledReminder(dueNow);
+    announce("Phone reminders are on. You will get an alert at each dose time.");
+    speak("Reminders are on.");
+    showToast("Reminders on.");
+  } else {
+    announce("Reminders were not allowed. You can still use the on-screen Take dose button.");
+  }
+}
+
+bindPress(els.holdBtn, () => takeDose("press"));
+bindPress(els.remindHold, () => takeDose("press"));
+bindPress(els.refillHold, requestRefill);
 
 restoreSettings();
+checkOverdueMisses();
 render();
+updateReminderStatus();
+scheduleReminders();
 setInterval(renderClock, 30000);
 
 if (AUTO_WAKE_LISTEN) {

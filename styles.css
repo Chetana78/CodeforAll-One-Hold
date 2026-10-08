@@ -9,8 +9,7 @@
   --warn: #7a3d00;
   --due: #8b1e1e;
   --focus: #005fcc;
-  --hold: 1500ms;
-  --target: 76px;
+  --target: 88px;
   --radius: 20px;
   --font: "Segoe UI", "Avenir Next", "Helvetica Neue", system-ui, sans-serif;
 }
@@ -29,7 +28,7 @@ html.max-contrast {
 }
 
 html.large-targets {
-  --target: 96px;
+  --target: 112px;
 }
 
 *,
@@ -84,48 +83,9 @@ body {
 }
 
 .stage {
-  display: grid;
-  gap: 28px;
+  display: flex;
+  justify-content: center;
   padding: 24px 16px 48px;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-.pitch {
-  color: #e8edf5;
-}
-
-.pitch-kicker {
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-size: 12px;
-  color: #9db0c9;
-  margin: 0 0 8px;
-}
-
-.pitch-title {
-  font-size: clamp(40px, 6vw, 64px);
-  margin: 0 0 12px;
-  letter-spacing: -0.03em;
-}
-
-.pitch-lead {
-  font-size: 18px;
-  line-height: 1.45;
-  max-width: 42ch;
-  color: #c9d4e3;
-}
-
-.pitch-points {
-  padding-left: 1.1em;
-  font-size: 16px;
-  line-height: 1.7;
-  color: #d7e0ea;
-}
-
-.pitch-hint {
-  color: #8fa3bb;
-  font-size: 14px;
 }
 
 .phone {
@@ -172,7 +132,7 @@ body {
 }
 
 .icon-btn {
-  min-height: 56px;
+  min-height: var(--target);
   min-width: 56px;
   padding: 8px 12px;
   border-radius: 14px;
@@ -180,19 +140,6 @@ body {
   background: var(--card);
   color: var(--ink);
   font-weight: 700;
-}
-
-.compare-strip {
-  margin: 0 16px 8px;
-  padding: 10px 12px;
-  border: 2px dashed var(--line);
-  border-radius: 12px;
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.compare-strip p {
-  margin: 0 0 4px;
 }
 
 .main {
@@ -203,25 +150,18 @@ body {
   gap: 16px;
 }
 
-.next-card {
-  background: var(--card);
-  border: 2px solid var(--ink);
-  border-radius: var(--radius);
-  padding: 16px 16px 14px;
-}
-
 .eyebrow {
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
-  color: var(--due);
+  color: #ffd4c8;
 }
 
 .med-name {
-  margin: 6px 0 4px;
-  font-size: clamp(32px, 8vw, 40px);
+  margin: 8px 0 6px;
+  font-size: clamp(32px, 8vw, 42px);
   line-height: 1.05;
   letter-spacing: -0.03em;
 }
@@ -229,26 +169,43 @@ body {
 .med-meta {
   margin: 0;
   font-size: 18px;
-  color: var(--muted);
+  color: rgba(255, 253, 248, 0.88);
+}
+
+.press-hint {
+  margin: 10px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255, 253, 248, 0.82);
 }
 
 .thumb-zone {
-  margin-top: auto;
+  margin-top: 8px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 20px;
 }
 
 .hold-btn {
   position: relative;
   isolation: isolate;
-  min-height: 132px;
+  min-height: 280px;
   width: 100%;
   border: 3px solid var(--ink);
   border-radius: 28px;
   background: var(--take);
   color: var(--take-ink);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
+  padding: 22px 22px 24px;
+}
+
+html.large-targets .hold-btn {
+  min-height: 340px;
 }
 
 .hold-btn:disabled {
@@ -258,23 +215,12 @@ body {
 }
 
 .hold-btn.short {
-  min-height: 112px;
-}
-
-.hold-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 0%;
-  background: rgba(255, 255, 255, 0.28);
-  z-index: -1;
-}
-
-html:not(.reduce-motion) .hold-fill.filling {
-  transition: width var(--hold) linear;
+  min-height: 140px;
 }
 
 .hold-label {
-  font-size: 28px;
+  margin-top: 18px;
+  font-size: 34px;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
@@ -282,7 +228,7 @@ html:not(.reduce-motion) .hold-fill.filling {
 .secondary-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 16px;
 }
 
 .big-btn {
@@ -338,6 +284,20 @@ html:not(.reduce-motion) .hold-fill.filling {
 .med-row span {
   color: var(--muted);
   font-size: 15px;
+}
+
+.missed-summary {
+  padding-bottom: 8px;
+}
+
+.missed-count {
+  margin: 0;
+  min-height: var(--target);
+  display: flex;
+  align-items: center;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--due);
 }
 
 .badge {
@@ -438,6 +398,13 @@ html:not(.reduce-motion) .hold-fill.filling {
   height: 28px;
 }
 
+.settings-note {
+  margin: 0 4px 6px;
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
 button:focus-visible,
 input:focus-visible,
 a:focus-visible {
@@ -452,21 +419,9 @@ html.reduce-motion *::after {
   animation: none !important;
 }
 
-@media (min-width: 900px) {
-  .stage {
-    grid-template-columns: 1fr 430px;
-    align-items: start;
-    padding-top: 40px;
-  }
-}
-
 @media (max-width: 520px) {
   body {
     background: var(--bg);
-  }
-
-  .pitch {
-    display: none;
   }
 
   .phone {
