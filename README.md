@@ -23,9 +23,10 @@ On a phone, use your laptop’s local IP on the same Wi‑Fi, for example `http:
 2. Tap the large **Take dose** button (Morning tablet)
 3. Show **Undo**
 4. Turn on **Larger targets**
-5. **Trigger reminder (demo)** → tap Take dose
-6. Tap **Evening tablet · Low · refill** → tap Request refill
-7. Optional: **Voice** and say “take”, “skip”, “refill”, or “undo” (Chrome + mic)
+5. **Turn on phone reminders** → Allow in the browser (alerts at 08:00, 13:00, 21:00)
+6. **Trigger reminder (demo)** if it is not dose time yet → tap Take dose
+7. Tap **Evening tablet · Low · refill** → tap Request refill
+8. Optional: **Voice** and say “take”, “skip”, “refill”, or “undo” (Chrome + mic)
 
 ## What’s in the prototype
 
@@ -36,11 +37,12 @@ On a phone, use your laptop’s local IP on the same Wi‑Fi, for example `http:
 | Undo (30s) | Working |
 | Today list | Working |
 | Simulated refill | Working |
-| Demo reminder overlay | Working |
+| On-screen reminder overlay | Working |
+| Phone alerts at dose time (browser notifications) | Working on localhost / Chrome |
 | Voice commands | Working in Chromium browsers |
 | Access settings | Working |
 | Real pharmacy API | Not in prototype |
-| Real push notifications | Not in prototype |
+| SMS or locked-phone OS alarms | Not in prototype |
 
 No backend, no login. Data is stored in the browser (`localStorage`).
 
