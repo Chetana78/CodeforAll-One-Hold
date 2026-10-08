@@ -143,19 +143,6 @@ body {
   font-weight: 700;
 }
 
-.compare-strip {
-  margin: 0 16px 8px;
-  padding: 10px 12px;
-  border: 2px dashed var(--line);
-  border-radius: 12px;
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.compare-strip p {
-  margin: 0 0 4px;
-}
-
 .main {
   flex: 1;
   padding: 8px 16px 24px;
