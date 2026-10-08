@@ -67,6 +67,7 @@ const els = {
   enableReminders: document.getElementById("enableReminders"),
   reminderStatus: document.getElementById("reminderStatus"),
   resetDemo: document.getElementById("resetDemo"),
+  missedList: document.getElementById("missedList"),
 };
 
 let meds = loadMeds();
@@ -90,6 +91,93 @@ function loadMeds() {
 
 function saveMeds() {
   localStorage.setItem("onetap-meds-v1", JSON.stringify(meds));
+}
+
+function dayKey(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function daysAgo(n) {
+  const date = new Date();
+  date.setDate(date.getDate() - n);
+  return date;
+}
+
+function formatMissedDate(isoDay) {
+  const date = new Date(`${isoDay}T12:00:00`);
+  return date.toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function defaultMissed() {
+  return [
+    {
+      key: `morning-${dayKey(daysAgo(2))}`,
+      id: "morning",
+      name: "Morning tablet",
+      time: "08:00",
+      day: dayKey(daysAgo(2)),
+      reason: "not taken",
+    },
+    {
+      key: `afternoon-${dayKey(daysAgo(1))}`,
+      id: "afternoon",
+      name: "Afternoon tablet",
+      time: "13:00",
+      day: dayKey(daysAgo(1)),
+      reason: "skipped",
+    },
+  ];
+}
+
+function loadMissed() {
+  try {
+    const raw = localStorage.getItem("onetap-missed-v1");
+    if (raw) return JSON.parse(raw);
+  } catch {
+    /* ignore */
+  }
+  return defaultMissed();
+}
+
+function saveMissed() {
+  localStorage.setItem("onetap-missed-v1", JSON.stringify(missed));
+}
+
+let missed = loadMissed();
+
+function addMissed(med, reason, day = dayKey()) {
+  const key = `${med.id}-${day}`;
+  if (missed.some((item) => item.key === key)) return key;
+  missed.unshift({
+    key,
+    id: med.id,
+    name: med.name,
+    time: med.time,
+    day,
+    reason,
+  });
+  saveMissed();
+  return key;
+}
+
+function removeMissedKey(key) {
+  missed = missed.filter((item) => item.key !== key);
+  saveMissed();
+}
+
+function checkOverdueMisses() {
+  const now = Date.now();
+  meds.forEach((med) => {
+    if (med.status === "taken" || med.status === "skipped") return;
+    const dueAt = doseTimeToday(med.time).getTime();
+    if (now > dueAt + 60 * 60 * 1000) {
+      addMissed(med, "not taken");
+    }
+  });
 }
 
 function announce(text) {
@@ -185,10 +273,31 @@ function renderList() {
   });
 }
 
+function renderMissed() {
+  if (!els.missedList) return;
+  els.missedList.innerHTML = "";
+  if (!missed.length) {
+    const li = document.createElement("li");
+    li.className = "missed-empty";
+    li.textContent = "No missed dates.";
+    els.missedList.append(li);
+    return;
+  }
+  missed.slice(0, 8).forEach((item) => {
+    const li = document.createElement("li");
+    const row = document.createElement("div");
+    row.className = "med-row missed-row";
+    row.innerHTML = `<div><strong>${item.name}</strong><span>${formatMissedDate(item.day)} · ${item.time}</span></div><span class="badge due">${item.reason}</span>`;
+    li.append(row);
+    els.missedList.append(li);
+  });
+}
+
 function render() {
   renderClock();
   renderNext();
   renderList();
+  renderMissed();
 }
 
 function showToast(text) {
@@ -207,6 +316,7 @@ function takeDose(source) {
   lastAction = { type: "take", id: med.id, prev: med.status };
   med.status = "taken";
   markNotified(med);
+  removeMissedKey(`${med.id}-${dayKey()}`);
   saveMeds();
   render();
   scheduleReminders();
@@ -222,7 +332,8 @@ function takeDose(source) {
 function skipDose(reason) {
   const med = activeMed();
   if (med.status === "taken") return;
-  lastAction = { type: "skip", id: med.id, prev: med.status, reason };
+  const missKey = addMissed(med, reason === "unwell" ? "felt unwell" : "skipped");
+  lastAction = { type: "skip", id: med.id, prev: med.status, reason, missKey };
   med.status = "skipped";
   markNotified(med);
   saveMeds();
@@ -256,6 +367,7 @@ function undo() {
     const med = meds.find((m) => m.id === lastAction.id);
     if (med) med.status = lastAction.prev;
     activeId = lastAction.id;
+    if (lastAction.type === "skip" && lastAction.missKey) removeMissedKey(lastAction.missKey);
   }
   if (lastAction.type === "refill") {
     const med = meds.find((m) => m.id === LOW_ID);
@@ -380,10 +492,12 @@ els.demoReminder.addEventListener("click", () => {
 });
 els.resetDemo.addEventListener("click", () => {
   meds = defaultMeds();
+  missed = defaultMissed();
   activeId = FIRST_ID;
   lastAction = null;
   els.toast.hidden = true;
   saveMeds();
+  saveMissed();
   render();
   announce("Demo reset. Morning tablet is due now.");
 });
@@ -511,6 +625,7 @@ bindPress(els.remindHold, () => takeDose("press"));
 bindPress(els.refillHold, requestRefill);
 
 restoreSettings();
+checkOverdueMisses();
 render();
 updateReminderStatus();
 scheduleReminders();

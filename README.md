@@ -36,6 +36,7 @@ On a phone, use your laptop’s local IP on the same Wi‑Fi, for example `http:
 | Skip with large choices | Working |
 | Undo (30s) | Working |
 | Today list | Working |
+| Missed dates log | Working |
 | Simulated refill | Working |
 | On-screen reminder overlay | Working |
 | Phone alerts at dose time (browser notifications) | Working on localhost / Chrome |

@@ -286,6 +286,24 @@ html.large-targets .hold-btn {
   font-size: 15px;
 }
 
+.missed {
+  padding-bottom: 8px;
+}
+
+.missed-row {
+  pointer-events: none;
+}
+
+.missed-empty {
+  margin: 0;
+  padding: 16px 14px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--muted);
+  border: 2px dashed var(--line);
+  border-radius: 16px;
+}
+
 .badge {
   flex-shrink: 0;
   font-weight: 800;
