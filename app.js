@@ -40,14 +40,12 @@ const els = {
   nextMeta: document.getElementById("nextMeta"),
   holdBtn: document.getElementById("holdBtn"),
   holdLabel: document.getElementById("holdLabel"),
-  skipBtn: document.getElementById("skipBtn"),
-  voiceBtn: document.getElementById("voiceBtn"),
+  laterBtn: document.getElementById("laterBtn"),
   medList: document.getElementById("medList"),
   toast: document.getElementById("toast"),
   toastText: document.getElementById("toastText"),
   undoBtn: document.getElementById("undoBtn"),
   live: document.getElementById("live"),
-  skipSheet: document.getElementById("skipSheet"),
   reminder: document.getElementById("reminder"),
   remindTitle: document.getElementById("remindTitle"),
   remindMeta: document.getElementById("remindMeta"),
@@ -74,8 +72,6 @@ let meds = loadMeds();
 let activeId = meds.find((m) => m.status === "due")?.id || meds[0].id;
 let lastAction = null;
 let undoTimer = null;
-let listening = false;
-let recognition = null;
 let reminderTimers = [];
 const notifiedKeys = new Set(JSON.parse(sessionStorage.getItem("onetap-notified") || "[]"));
 
@@ -303,25 +299,22 @@ function takeDose(source) {
   speak(`${med.name} taken.`);
   vibrate(40);
   closeOverlay(els.reminder);
-  closeOverlay(els.skipSheet);
 }
 
-function skipDose(reason) {
+function takeLater() {
   const med = activeMed();
-  if (med.status === "taken") return;
-  const missKey = addMissed(med, reason === "unwell" ? "felt unwell" : "skipped");
-  lastAction = { type: "skip", id: med.id, prev: med.status, reason, missKey };
-  med.status = "skipped";
+  if (med.status === "taken" || med.status === "skipped") return;
   markNotified(med);
-  saveMeds();
-  render();
-  scheduleReminders();
-  const label = reason === "unwell" ? "felt unwell" : "not now";
-  showToast(`${med.name} skipped.`);
-  announce(`${med.name} skipped, ${label}. Undo available.`);
-  speak(`${med.name} skipped.`);
-  closeOverlay(els.skipSheet);
   closeOverlay(els.reminder);
+  reminderTimers.push(
+    setTimeout(() => {
+      notifiedKeys.delete(reminderKey(med));
+      fireScheduledReminder(med);
+    }, 15 * 60 * 1000)
+  );
+  showToast("We'll remind you later.");
+  announce(`${med.name} saved for later. One Tap will remind you again.`);
+  speak("Okay. We'll remind you later.");
 }
 
 function requestRefill() {
@@ -402,54 +395,10 @@ function restoreSettings() {
   }
 }
 
-function startVoice() {
-  const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!Speech) {
-    announce("Voice is not available in this browser. Use the large take button, or skip.");
-    speak("Voice is not available. Use the take button.");
-    return;
-  }
-  if (listening && recognition) {
-    recognition.stop();
-    return;
-  }
-  recognition = new Speech();
-  recognition.lang = "en-GB";
-  recognition.interimResults = false;
-  recognition.onstart = () => {
-    listening = true;
-    els.voiceBtn.textContent = "Listening…";
-    announce("Listening. Say take, skip, or refill.");
-  };
-  recognition.onend = () => {
-    listening = false;
-    els.voiceBtn.textContent = "Voice";
-  };
-  recognition.onerror = () => {
-    listening = false;
-    els.voiceBtn.textContent = "Voice";
-    announce("Voice did not catch that. You can still use the large take button.");
-  };
-  recognition.onresult = (event) => {
-    const said = event.results[0][0].transcript.toLowerCase();
-    if (said.includes("take") || said.includes("taken") || said.includes("yes")) takeDose("voice");
-    else if (said.includes("skip") || said.includes("later")) openOverlay(els.skipSheet);
-    else if (said.includes("refill")) openOverlay(els.refillSheet);
-    else if (said.includes("undo")) undo();
-    else announce(`Heard “${said}”. Try saying take, skip, or refill.`);
-  };
-  recognition.start();
-}
-
-els.skipBtn.addEventListener("click", () => openOverlay(els.skipSheet));
-els.skipSheet.querySelectorAll("[data-skip]").forEach((btn) => {
-  btn.addEventListener("click", () => skipDose(btn.dataset.skip));
-});
-document.getElementById("skipCancel").addEventListener("click", () => closeOverlay(els.skipSheet));
-els.remindDismiss.addEventListener("click", () => closeOverlay(els.reminder));
+els.laterBtn.addEventListener("click", takeLater);
+els.remindDismiss.addEventListener("click", takeLater);
 els.refillCancel.addEventListener("click", () => closeOverlay(els.refillSheet));
 els.undoBtn.addEventListener("click", undo);
-els.voiceBtn.addEventListener("click", startVoice);
 els.settingsBtn.addEventListener("click", () => openOverlay(els.settings));
 els.settingsClose.addEventListener("click", () => {
   closeOverlay(els.settings);
@@ -484,7 +433,7 @@ els.resetDemo.addEventListener("click", () => {
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
-    [els.skipSheet, els.reminder, els.refillSheet, els.settings].forEach(closeOverlay);
+    [els.reminder, els.refillSheet, els.settings].forEach(closeOverlay);
   }
 });
 

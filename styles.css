@@ -186,6 +186,10 @@ body {
   gap: 20px;
 }
 
+.thumb-zone > .big-btn {
+  width: 100%;
+}
+
 .hold-btn {
   position: relative;
   isolation: isolate;
@@ -223,12 +227,6 @@ html.large-targets .hold-btn {
   font-size: 34px;
   font-weight: 800;
   letter-spacing: -0.02em;
-}
-
-.secondary-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
 }
 
 .big-btn {

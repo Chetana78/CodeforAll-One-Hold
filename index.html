@@ -36,10 +36,7 @@
             <span class="hold-label" id="holdLabel">Take dose</span>
             <span class="press-hint" id="holdHelp">One large tap. No hold. Misses can be undone.</span>
           </button>
-          <div class="secondary-row">
-            <button type="button" class="big-btn" id="skipBtn">Skip</button>
-            <button type="button" class="big-btn" id="voiceBtn">Voice</button>
-          </div>
+          <button type="button" class="big-btn" id="laterBtn">Take it later</button>
         </div>
 
         <section class="today" aria-labelledby="todayHeading">
@@ -62,16 +59,6 @@
     </div>
   </div>
 
-  <div class="overlay" id="skipSheet" hidden>
-    <div class="sheet" role="dialog" aria-labelledby="skipTitle" aria-modal="true">
-      <h2 id="skipTitle">Skip this dose?</h2>
-      <p>One large choice. No tiny menus.</p>
-      <button type="button" class="big-btn primary-outline" data-skip="not-now">Not now</button>
-      <button type="button" class="big-btn primary-outline" data-skip="unwell">Felt unwell</button>
-      <button type="button" class="big-btn" id="skipCancel">Cancel</button>
-    </div>
-  </div>
-
   <div class="overlay" id="reminder" hidden>
     <div class="sheet reminder-sheet" role="alertdialog" aria-labelledby="remindTitle" aria-modal="true">
       <p class="eyebrow">Reminder</p>
@@ -80,7 +67,7 @@
       <button type="button" class="hold-btn" id="remindHold">
         <span class="hold-label">Take dose</span>
       </button>
-      <button type="button" class="big-btn" id="remindDismiss">Not now</button>
+      <button type="button" class="big-btn" id="remindDismiss">Take it later</button>
     </div>
   </div>
 
