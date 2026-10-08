@@ -26,7 +26,7 @@ On a phone, use your laptop’s local IP on the same Wi‑Fi, for example `http:
 4. Turn on **Larger targets** and **Longer hold (tremor)**
 5. **Trigger reminder (demo)** → hold to take
 6. Tap **Atorvastatin · Low · refill** → hold to request refill
-7. Optional: **Voice** and say “take”, “skip”, “refill”, or “undo” (Chrome + mic)
+7. Wake listening starts automatically on page load. Say “OneTap take”, “OneTap skip”, “OneTap refill”, or “OneTap undo”. You can also say “OneTap”, then say the command after the app responds.
 
 ## What’s in the prototype
 

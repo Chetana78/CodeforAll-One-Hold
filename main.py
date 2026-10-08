@@ -17,13 +17,13 @@ class OneHoldHandler(SimpleHTTPRequestHandler):
             self.send_error(404, "Not found")
             return
 
-        duration = 5
+        duration = 3
         try:
             content_length = int(self.headers.get("content-length", "0"))
             if content_length:
                 body = self.rfile.read(content_length)
                 payload = json.loads(body.decode("utf-8"))
-                duration = int(payload.get("duration", duration))
+                duration = max(1, min(5, int(payload.get("duration", duration))))
         except (ValueError, json.JSONDecodeError):
             self.send_error(400, "Invalid JSON")
             return

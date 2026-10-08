@@ -5,7 +5,7 @@ import speech_recognition as sr
 from scipy.io import wavfile
 
 
-def record_and_transcribe(duration=5, fs=44100):
+def record_and_transcribe(duration=3, fs=16000):
     """Records audio from the microphone using sounddevice
 
     and transcribes it via SpeechRecognition (Google API).

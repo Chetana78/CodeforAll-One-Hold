@@ -1,6 +1,11 @@
 const HOLD_DEFAULT = 1500;
 const HOLD_TREMOR = 2500;
 const UNDO_MS = 30000;
+const VOICE_RECORD_SECONDS = 3;
+const WAKE_RECORD_SECONDS = 3;
+const AUTO_WAKE_LISTEN = true;
+const WAKE_WORDS = ["onetap", "one tap", "one tab", "1 tap", "1 tab", "want tap"];
+const VOICE_COMMANDS = ["take", "taken", "yes", "skip", "later", "refill", "undo"];
 
 const defaultMeds = () => [
   {
@@ -77,6 +82,8 @@ let holding = false;
 let listening = false;
 let recognition = null;
 let pythonVoiceAvailable = true;
+let wakeListening = false;
+let waitingForWakeCommand = false;
 
 function loadMeds() {
   try {
@@ -365,21 +372,41 @@ function handleVoiceCommand(transcript, source) {
   else announce(`Heard "${transcript}". Try saying take, skip, or refill.`);
 }
 
+function hasVoiceCommand(transcript) {
+  const said = transcript.toLowerCase();
+  return VOICE_COMMANDS.some((command) => said.includes(command));
+}
+
+function parseWakeTranscript(transcript) {
+  const said = transcript.toLowerCase();
+  const wakeWord = WAKE_WORDS.find((word) => said.includes(word));
+  if (!wakeWord) return { woke: false, command: "" };
+  return {
+    woke: true,
+    command: said.slice(said.indexOf(wakeWord) + wakeWord.length).trim(),
+  };
+}
+
 function setVoiceListening(isListening) {
   listening = isListening;
   els.voiceBtn.textContent = isListening ? "Listening..." : "Voice";
+}
+
+async function requestPythonVoice(duration) {
+  const response = await fetch("/api/voice-command", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ duration }),
+  });
+  const data = await response.json();
+  return { response, data };
 }
 
 async function startPythonVoice() {
   setVoiceListening(true);
   announce("Listening. Say take, skip, or refill.");
   try {
-    const response = await fetch("/api/voice-command", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ duration: 5 }),
-    });
-    const data = await response.json();
+    const { response, data } = await requestPythonVoice(VOICE_RECORD_SECONDS);
     if (!response.ok || !data.ok) {
       announce(data.error || "Python voice did not catch that. You can still hold to take.");
       return;
@@ -434,6 +461,51 @@ function startVoice() {
   else startBrowserVoice();
 }
 
+async function startWakeListening() {
+  if (wakeListening || !pythonVoiceAvailable) return;
+  wakeListening = true;
+  announce('Wake listening started. Say "OneTap" then a command.');
+
+  while (wakeListening && pythonVoiceAvailable) {
+    try {
+      const duration = waitingForWakeCommand ? VOICE_RECORD_SECONDS : WAKE_RECORD_SECONDS;
+      const { response, data } = await requestPythonVoice(duration);
+      if (!response.ok || !data.ok) {
+        if (response.status === 422) continue;
+        wakeListening = false;
+        announce(data.error || "Wake listening stopped. Use the Voice button to try again.");
+        break;
+      }
+
+      if (waitingForWakeCommand) {
+        waitingForWakeCommand = false;
+        handleVoiceCommand(data.transcript, "voice");
+        continue;
+      }
+
+      const wake = parseWakeTranscript(data.transcript);
+      if (!wake.woke) {
+        if (hasVoiceCommand(data.transcript)) {
+          handleVoiceCommand(data.transcript, "voice");
+        }
+        continue;
+      }
+
+      vibrate(20);
+      if (wake.command) {
+        handleVoiceCommand(wake.command, "voice");
+      } else {
+        waitingForWakeCommand = true;
+        announce("OneTap heard. Say take, skip, refill, or undo.");
+      }
+    } catch {
+      pythonVoiceAvailable = false;
+      wakeListening = false;
+      announce("Python voice server is not running. Start it with python main.py, then reopen this page.");
+    }
+  }
+}
+
 els.skipBtn.addEventListener("click", () => openOverlay(els.skipSheet));
 els.skipSheet.querySelectorAll("[data-skip]").forEach((btn) => {
   btn.addEventListener("click", () => skipDose(btn.dataset.skip));
@@ -485,3 +557,7 @@ bindHold(els.refillHold, els.refillFill, requestRefill);
 restoreSettings();
 render();
 setInterval(renderClock, 30000);
+
+if (AUTO_WAKE_LISTEN) {
+  setTimeout(startWakeListening, 600);
+}
