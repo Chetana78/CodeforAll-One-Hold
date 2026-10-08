@@ -286,22 +286,18 @@ html.large-targets .hold-btn {
   font-size: 15px;
 }
 
-.missed {
+.missed-summary {
   padding-bottom: 8px;
 }
 
-.missed-row {
-  pointer-events: none;
-}
-
-.missed-empty {
+.missed-count {
   margin: 0;
-  padding: 16px 14px;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--muted);
-  border: 2px dashed var(--line);
-  border-radius: 16px;
+  min-height: var(--target);
+  display: flex;
+  align-items: center;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--due);
 }
 
 .badge {

@@ -67,7 +67,7 @@ const els = {
   enableReminders: document.getElementById("enableReminders"),
   reminderStatus: document.getElementById("reminderStatus"),
   resetDemo: document.getElementById("resetDemo"),
-  missedList: document.getElementById("missedList"),
+  missedCount: document.getElementById("missedCount"),
 };
 
 let meds = loadMeds();
@@ -101,15 +101,6 @@ function daysAgo(n) {
   const date = new Date();
   date.setDate(date.getDate() - n);
   return date;
-}
-
-function formatMissedDate(isoDay) {
-  const date = new Date(`${isoDay}T12:00:00`);
-  return date.toLocaleDateString(undefined, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
 }
 
 function defaultMissed() {
@@ -274,23 +265,9 @@ function renderList() {
 }
 
 function renderMissed() {
-  if (!els.missedList) return;
-  els.missedList.innerHTML = "";
-  if (!missed.length) {
-    const li = document.createElement("li");
-    li.className = "missed-empty";
-    li.textContent = "No missed dates.";
-    els.missedList.append(li);
-    return;
-  }
-  missed.slice(0, 8).forEach((item) => {
-    const li = document.createElement("li");
-    const row = document.createElement("div");
-    row.className = "med-row missed-row";
-    row.innerHTML = `<div><strong>${item.name}</strong><span>${formatMissedDate(item.day)} · ${item.time}</span></div><span class="badge due">${item.reason}</span>`;
-    li.append(row);
-    els.missedList.append(li);
-  });
+  if (!els.missedCount) return;
+  const n = missed.length;
+  els.missedCount.textContent = n === 1 ? "Missed 1 time" : `Missed ${n} times`;
 }
 
 function render() {
