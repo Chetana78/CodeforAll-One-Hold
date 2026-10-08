@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#12141a" />
+  <title>OneHold — medication without precise gestures</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to next dose</a>
+
+  <div class="stage">
+    <aside class="pitch" aria-label="Hackathon pitch">
+      <p class="pitch-kicker">Lilly hackathon · Accessibility in the medicine journey</p>
+      <h1 class="pitch-title">OneHold</h1>
+      <p class="pitch-lead">
+        Most med apps need two hands, tiny taps, and swipes.
+        OneHold is built for limited grip, tremor, and one-thumb use.
+      </p>
+      <ul class="pitch-points">
+        <li>Hold to confirm — not a 16px checkbox</li>
+        <li>No drag, pinch, or swipe-required actions</li>
+        <li>Voice and keyboard/switch as backups</li>
+        <li>Undo instead of punishing mis-taps</li>
+      </ul>
+      <p class="pitch-hint">Demo on this laptop, or open this page on a phone.</p>
+    </aside>
+
+    <div class="phone" role="application" aria-label="OneHold medication app">
+      <header class="app-bar">
+        <div>
+          <p class="brand">OneHold</p>
+          <p class="clock" id="clock">Today</p>
+        </div>
+        <button type="button" class="icon-btn" id="settingsBtn" aria-haspopup="dialog" aria-controls="settings">
+          Access settings
+        </button>
+      </header>
+
+      <div class="compare-strip" id="compareStrip">
+        <p><strong>Typical app:</strong> 24px checkbox · swipe to dismiss · two-hand time picker</p>
+        <p><strong>OneHold:</strong> hold 1.5s · one thumb · 30s undo</p>
+      </div>
+
+      <main id="main" class="main">
+        <section class="next-card" aria-labelledby="nextHeading">
+          <p class="eyebrow" id="nextStatus">Due now</p>
+          <h2 id="nextHeading" class="med-name">Amlodipine</h2>
+          <p class="med-meta" id="nextMeta">5 mg · 08:00 · blood pressure</p>
+          <p class="sr-only" id="holdHelp">Press and hold the take button until it completes. Let go early to cancel. Space also holds when the button is focused.</p>
+        </section>
+
+        <div class="thumb-zone">
+          <button
+            type="button"
+            class="hold-btn"
+            id="holdBtn"
+            aria-describedby="holdHelp"
+            aria-live="off"
+          >
+            <span class="hold-fill" id="holdFill" aria-hidden="true"></span>
+            <span class="hold-label" id="holdLabel">Hold to take</span>
+          </button>
+          <div class="secondary-row">
+            <button type="button" class="big-btn" id="skipBtn">Skip</button>
+            <button type="button" class="big-btn" id="voiceBtn">Voice</button>
+          </div>
+        </div>
+
+        <section class="today" aria-labelledby="todayHeading">
+          <h2 id="todayHeading">Today</h2>
+          <ul class="med-list" id="medList"></ul>
+        </section>
+      </main>
+
+      <div class="toast" id="toast" hidden>
+        <p id="toastText">Dose taken.</p>
+        <button type="button" class="undo-btn" id="undoBtn">Undo</button>
+      </div>
+
+      <p class="live" id="live" aria-live="polite" aria-atomic="true"></p>
+    </div>
+  </div>
+
+  <div class="overlay" id="skipSheet" hidden>
+    <div class="sheet" role="dialog" aria-labelledby="skipTitle" aria-modal="true">
+      <h2 id="skipTitle">Skip this dose?</h2>
+      <p>One large choice. No tiny menus.</p>
+      <button type="button" class="big-btn primary-outline" data-skip="not-now">Not now</button>
+      <button type="button" class="big-btn primary-outline" data-skip="unwell">Felt unwell</button>
+      <button type="button" class="big-btn" id="skipCancel">Cancel</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="reminder" hidden>
+    <div class="sheet reminder-sheet" role="alertdialog" aria-labelledby="remindTitle" aria-modal="true">
+      <p class="eyebrow">Reminder</p>
+      <h2 id="remindTitle">Time for Amlodipine</h2>
+      <p>5 mg · blood pressure</p>
+      <button type="button" class="hold-btn" id="remindHold">
+        <span class="hold-fill" id="remindFill" aria-hidden="true"></span>
+        <span class="hold-label">Hold to take</span>
+      </button>
+      <button type="button" class="big-btn" id="remindDismiss">Not now</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="refillSheet" hidden>
+    <div class="sheet" role="dialog" aria-labelledby="refillTitle" aria-modal="true">
+      <h2 id="refillTitle">Request refill?</h2>
+      <p id="refillCopy">Atorvastatin is running low. One control sends a simulated pharmacy request.</p>
+      <button type="button" class="hold-btn short" id="refillHold">
+        <span class="hold-fill" id="refillFill" aria-hidden="true"></span>
+        <span class="hold-label">Hold to request refill</span>
+      </button>
+      <button type="button" class="big-btn" id="refillCancel">Cancel</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="settings" hidden>
+    <div class="sheet" role="dialog" aria-labelledby="settingsTitle" aria-modal="true">
+      <h2 id="settingsTitle">Access settings</h2>
+      <label class="toggle">
+        <input type="checkbox" id="optLarge" />
+        <span>Larger targets</span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="optContrast" />
+        <span>Maximum contrast</span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="optTremor" />
+        <span>Longer hold (tremor)</span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="optReduced" />
+        <span>Reduce motion</span>
+      </label>
+      <button type="button" class="big-btn" id="demoReminder">Trigger reminder (demo)</button>
+      <button type="button" class="big-btn" id="resetDemo">Reset demo data</button>
+      <button type="button" class="big-btn primary-outline" id="settingsClose">Close</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
