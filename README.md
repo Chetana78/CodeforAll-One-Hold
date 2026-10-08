@@ -46,7 +46,7 @@ No backend, no login. Data is stored in the browser (`localStorage`).
 
 ## Files
 
-- `index.html` — app + pitch panel
+- `index.html` — app shell
 - `styles.css` — large targets, contrast, thumb zone
 - `app.js` — doses, hold logic, voice, settings
 
