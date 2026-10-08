@@ -131,13 +131,6 @@ body {
   cursor: pointer;
 }
 
-.press-hint {
-  margin: 10px 0 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--muted);
-}
-
 .icon-btn {
   min-height: var(--target);
   min-width: 56px;
@@ -157,25 +150,18 @@ body {
   gap: 16px;
 }
 
-.next-card {
-  background: var(--card);
-  border: 2px solid var(--ink);
-  border-radius: var(--radius);
-  padding: 16px 16px 14px;
-}
-
 .eyebrow {
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
-  color: var(--due);
+  color: #ffd4c8;
 }
 
 .med-name {
-  margin: 6px 0 4px;
-  font-size: clamp(32px, 8vw, 40px);
+  margin: 8px 0 6px;
+  font-size: clamp(32px, 8vw, 42px);
   line-height: 1.05;
   letter-spacing: -0.03em;
 }
@@ -183,11 +169,18 @@ body {
 .med-meta {
   margin: 0;
   font-size: 18px;
-  color: var(--muted);
+  color: rgba(255, 253, 248, 0.88);
+}
+
+.press-hint {
+  margin: 10px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255, 253, 248, 0.82);
 }
 
 .thumb-zone {
-  margin-top: auto;
+  margin-top: 8px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -196,17 +189,23 @@ body {
 .hold-btn {
   position: relative;
   isolation: isolate;
-  min-height: 200px;
+  min-height: 280px;
   width: 100%;
   border: 3px solid var(--ink);
   border-radius: 28px;
   background: var(--take);
   color: var(--take-ink);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
+  padding: 22px 22px 24px;
 }
 
 html.large-targets .hold-btn {
-  min-height: 240px;
+  min-height: 340px;
 }
 
 .hold-btn:disabled {
@@ -220,7 +219,8 @@ html.large-targets .hold-btn {
 }
 
 .hold-label {
-  font-size: 32px;
+  margin-top: 18px;
+  font-size: 34px;
   font-weight: 800;
   letter-spacing: -0.02em;
 }

@@ -23,22 +23,18 @@
       </header>
 
       <main id="main" class="main">
-        <section class="next-card" aria-labelledby="nextHeading">
-          <p class="eyebrow" id="nextStatus">Due now</p>
-          <h2 id="nextHeading" class="med-name">Morning tablet</h2>
-          <p class="med-meta" id="nextMeta">1 tablet · 08:00 · morning dose</p>
-          <p class="press-hint" id="holdHelp">One large tap. No hold. Misses can be undone.</p>
-        </section>
-
         <div class="thumb-zone">
           <button
             type="button"
-            class="hold-btn"
+            class="hold-btn take-card"
             id="holdBtn"
             aria-describedby="holdHelp"
-            aria-live="off"
           >
+            <span class="eyebrow" id="nextStatus">Due now</span>
+            <span class="med-name" id="nextHeading">Morning tablet</span>
+            <span class="med-meta" id="nextMeta">1 tablet · 08:00 · morning dose</span>
             <span class="hold-label" id="holdLabel">Take dose</span>
+            <span class="press-hint" id="holdHelp">One large tap. No hold. Misses can be undone.</span>
           </button>
           <div class="secondary-row">
             <button type="button" class="big-btn" id="skipBtn">Skip</button>
