@@ -4,6 +4,8 @@ const WAKE_RECORD_SECONDS = 3;
 const AUTO_WAKE_LISTEN = true;
 const WAKE_WORDS = ["onetap", "one tap", "one tab", "1 tap", "1 tab", "want tap"];
 const VOICE_COMMANDS = ["take", "taken", "yes", "skip", "later", "refill", "undo"];
+const FIRST_ID = "morning";
+const LOW_ID = "evening";
 
 const defaultMeds = () => [
   {
@@ -81,6 +83,11 @@ let recognition = null;
 let pythonVoiceAvailable = true;
 let wakeListening = false;
 let waitingForWakeCommand = false;
+let wakeCommandDeadline = 0;
+let reminderTimers = [];
+let notifiedKeys = new Set(
+  JSON.parse(sessionStorage.getItem("onetap-notified") || "[]")
+);
 
 function loadMeds() {
   try {
@@ -406,11 +413,19 @@ function restoreSettings() {
 }
 
 function handleVoiceCommand(transcript, source) {
-  const said = transcript.toLowerCase();
-  if (said.includes("take") || said.includes("taken") || said.includes("yes")) takeDose(source);
-  else if (said.includes("skip") || said.includes("later")) openOverlay(els.skipSheet);
-  else if (said.includes("refill")) openOverlay(els.refillSheet);
-  else if (said.includes("undo")) undo();
+  const said = transcript.toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim();
+  if (/\b(don t|do not|not|no|never)\b/.test(said)) return;
+  const commands = said.split(/\s+/).filter((word) => VOICE_COMMANDS.includes(word));
+  const actions = new Set(commands.map((word) => ({ taken: "take", yes: "take", later: "skip" })[word] || word));
+  if (actions.size !== 1) {
+    announce(`Heard "${transcript}". Say one command: take, skip, refill, or undo.`);
+    return;
+  }
+  const command = [...actions][0];
+  if (command === "take") takeDose(source);
+  else if (command === "skip") openOverlay(els.skipSheet);
+  else if (command === "refill") openOverlay(els.refillSheet);
+  else if (command === "undo") undo();
   else announce(`Heard "${transcript}". Try saying take, skip, or refill.`);
 }
 
@@ -420,12 +435,12 @@ function hasVoiceCommand(transcript) {
 }
 
 function parseWakeTranscript(transcript) {
-  const said = transcript.toLowerCase();
-  const wakeWord = WAKE_WORDS.find((word) => said.includes(word));
+  const said = transcript.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  const wakeWord = said.match(new RegExp(`\\b(?:${WAKE_WORDS.join("|")})\\b`));
   if (!wakeWord) return { woke: false, command: "" };
   return {
     woke: true,
-    command: said.slice(said.indexOf(wakeWord) + wakeWord.length).trim(),
+    command: said.slice(wakeWord.index + wakeWord[0].length).trim(),
   };
 }
 
@@ -504,30 +519,31 @@ function startVoice() {
 }
 
 async function startWakeListening() {
-  if (wakeListening || !pythonVoiceAvailable) return;
+  if (wakeListening) return;
   wakeListening = true;
   announce('Wake listening started. Say "OneTap" then a command.');
 
-  while (wakeListening && pythonVoiceAvailable) {
+  while (wakeListening) {
     try {
       const duration = waitingForWakeCommand ? VOICE_RECORD_SECONDS : WAKE_RECORD_SECONDS;
+      setVoiceListening(true);
       const { response, data } = await requestPythonVoice(duration);
+      setVoiceListening(false);
       if (!response.ok || !data.ok) {
-        if (response.status === 422) continue;
-        wakeListening = false;
-        announce(data.error || "Wake listening stopped. Use the Voice button to try again.");
-        break;
-      }
-
-      if (waitingForWakeCommand) {
-        waitingForWakeCommand = false;
-        handleVoiceCommand(data.transcript, "voice");
+        if (response.status !== 422 || !data.error?.includes("Could not understand")) {
+          announce(data.error || "Voice is reconnecting.");
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
         continue;
       }
-
+      if (!data.transcript) continue;
       const wake = parseWakeTranscript(data.transcript);
+      if (waitingForWakeCommand && Date.now() > wakeCommandDeadline) {
+        waitingForWakeCommand = false;
+      }
       if (!wake.woke) {
-        if (hasVoiceCommand(data.transcript)) {
+        if (waitingForWakeCommand) {
+          waitingForWakeCommand = false;
           handleVoiceCommand(data.transcript, "voice");
         }
         continue;
@@ -535,15 +551,17 @@ async function startWakeListening() {
 
       vibrate(20);
       if (wake.command) {
+        waitingForWakeCommand = false;
         handleVoiceCommand(wake.command, "voice");
       } else {
         waitingForWakeCommand = true;
+        wakeCommandDeadline = Date.now() + 10000;
         announce("OneTap heard. Say take, skip, refill, or undo.");
       }
     } catch {
-      pythonVoiceAvailable = false;
-      wakeListening = false;
-      announce("Python voice server is not running. Start it with python main.py, then reopen this page.");
+      setVoiceListening(false);
+      announce("Voice is reconnecting. Keep python main.py running and open http://127.0.0.1:8788/.");
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
   }
 }
@@ -556,7 +574,8 @@ document.getElementById("skipCancel").addEventListener("click", () => closeOverl
 els.remindDismiss.addEventListener("click", () => closeOverlay(els.reminder));
 els.refillCancel.addEventListener("click", () => closeOverlay(els.refillSheet));
 els.undoBtn.addEventListener("click", undo);
-els.voiceBtn.addEventListener("click", startVoice);
+els.voiceBtn.disabled = AUTO_WAKE_LISTEN;
+if (!AUTO_WAKE_LISTEN) els.voiceBtn.addEventListener("click", startVoice);
 els.settingsBtn.addEventListener("click", () => openOverlay(els.settings));
 els.settingsClose.addEventListener("click", () => {
   closeOverlay(els.settings);

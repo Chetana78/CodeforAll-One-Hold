@@ -75,7 +75,7 @@ class OneHoldHandler(SimpleHTTPRequestHandler):
 
 def main():
     server = ThreadingHTTPServer((HOST, PORT), OneHoldHandler)
-    print(f"OneHold running at http://{HOST}:{PORT}/")
+    print(f"One Tap running at http://{HOST}:{PORT}/")
     print("Press Ctrl+C to stop.")
     server.serve_forever()
 
