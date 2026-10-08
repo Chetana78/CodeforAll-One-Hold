@@ -2,31 +2,34 @@ const HOLD_DEFAULT = 1500;
 const HOLD_TREMOR = 2500;
 const UNDO_MS = 30000;
 
+const LOW_ID = "evening";
+const FIRST_ID = "morning";
+
 const defaultMeds = () => [
   {
-    id: "amlodipine",
-    name: "Amlodipine",
-    dose: "5 mg",
+    id: "morning",
+    name: "Morning tablet",
+    dose: "1 tablet",
     time: "08:00",
-    reason: "blood pressure",
+    reason: "morning dose",
     status: "due",
     remaining: 18,
   },
   {
-    id: "metformin",
-    name: "Metformin",
-    dose: "500 mg",
+    id: "afternoon",
+    name: "Afternoon tablet",
+    dose: "1 tablet",
     time: "13:00",
-    reason: "diabetes",
+    reason: "afternoon dose",
     status: "upcoming",
     remaining: 24,
   },
   {
-    id: "atorvastatin",
-    name: "Atorvastatin",
-    dose: "20 mg",
+    id: "evening",
+    name: "Evening tablet",
+    dose: "1 tablet",
     time: "21:00",
-    reason: "cholesterol",
+    reason: "evening dose",
     status: "low",
     remaining: 4,
   },
@@ -49,6 +52,8 @@ const els = {
   live: document.getElementById("live"),
   skipSheet: document.getElementById("skipSheet"),
   reminder: document.getElementById("reminder"),
+  remindTitle: document.getElementById("remindTitle"),
+  remindMeta: document.getElementById("remindMeta"),
   remindHold: document.getElementById("remindHold"),
   remindFill: document.getElementById("remindFill"),
   remindDismiss: document.getElementById("remindDismiss"),
@@ -79,7 +84,7 @@ let recognition = null;
 
 function loadMeds() {
   try {
-    const raw = localStorage.getItem("onehold-meds");
+    const raw = localStorage.getItem("onehold-meds-v2");
     if (raw) return JSON.parse(raw);
   } catch {
     /* ignore */
@@ -88,7 +93,7 @@ function loadMeds() {
 }
 
 function saveMeds() {
-  localStorage.setItem("onehold-meds", JSON.stringify(meds));
+  localStorage.setItem("onehold-meds-v2", JSON.stringify(meds));
 }
 
 function holdMs() {
@@ -171,11 +176,14 @@ function renderList() {
               : "Later";
     btn.append(left, badge);
     btn.addEventListener("click", () => {
-      if (med.status === "low" && med.id === "atorvastatin") {
+      if (med.status === "low" && med.id === LOW_ID) {
         activeId = med.id;
         renderNext();
+        if (els.refillCopy) {
+          els.refillCopy.textContent = `${med.name} is running low. One control sends a simulated refill request.`;
+        }
         openOverlay(els.refillSheet);
-        announce("Refill sheet opened for Atorvastatin.");
+        announce(`Refill sheet opened for ${med.name}.`);
         return;
       }
       activeId = med.id;
@@ -235,7 +243,7 @@ function skipDose(reason) {
 }
 
 function requestRefill() {
-  const med = meds.find((m) => m.id === "atorvastatin");
+  const med = meds.find((m) => m.id === LOW_ID);
   lastAction = { type: "refill", remaining: med.remaining };
   med.remaining = 30;
   med.status = med.status === "low" ? "upcoming" : med.status;
@@ -256,7 +264,7 @@ function undo() {
     activeId = lastAction.id;
   }
   if (lastAction.type === "refill") {
-    const med = meds.find((m) => m.id === "atorvastatin");
+    const med = meds.find((m) => m.id === LOW_ID);
     med.remaining = lastAction.remaining;
     med.status = "low";
   }
@@ -410,23 +418,25 @@ els.settingsClose.addEventListener("click", () => {
 });
 els.demoReminder.addEventListener("click", () => {
   closeOverlay(els.settings);
-  activeId = "amlodipine";
+  activeId = FIRST_ID;
   const med = activeMed();
   if (med.status === "taken") med.status = "due";
   saveMeds();
   render();
+  els.remindTitle.textContent = `Time for ${med.name}`;
+  if (els.remindMeta) els.remindMeta.textContent = `${med.dose} · ${med.reason}`;
   openOverlay(els.reminder);
-  announce("Reminder. Time for Amlodipine. Hold to take.");
-  speak("Time for Amlodipine. Hold to take.");
+  announce(`Reminder. Time for ${med.name}. Hold to take.`);
+  speak(`Time for ${med.name}. Hold to take.`);
 });
 els.resetDemo.addEventListener("click", () => {
   meds = defaultMeds();
-  activeId = "amlodipine";
+  activeId = FIRST_ID;
   lastAction = null;
   els.toast.hidden = true;
   saveMeds();
   render();
-  announce("Demo reset. Amlodipine is due now.");
+  announce("Demo reset. Morning tablet is due now.");
 });
 [els.optLarge, els.optContrast, els.optTremor, els.optReduced].forEach((el) => {
   el.addEventListener("change", applySettings);
